@@ -2,64 +2,7 @@ from tkinter import *
 import requests
 
 
-# Instantiate an instance of a window
-window = Tk()
-window.geometry("420x420")
-window.title("Simple Weather App")
-
-
-# Instantiate an instance of the logos
-icon = PhotoImage(file="logo/weather.png")
-search_logo = PhotoImage(file="logo/magnifier.png")
-
-
-# Add logo to windows
-window.iconphoto(True, icon)
-window.config(background="light blue")
-
-
-# Label of the application
-main_label = Label(window, text="Simple Weather App")
-main_label.config(
-    font=("Roboto", 20, "bold"),
-    fg="black",
-    bg="light blue",
-    image=icon,
-    compound="right",
-)
-main_label.pack(padx=5, pady=20)
-
-
-# Create search box input
-search_input = Entry(window)
-search_input.config(font=("Roboto", 20))
-search_input.pack()
-
-
-# Create temperature label
-temp_label = Label(window, text="Temperature:")
-temp_label.config(
-    font=("Roboto", 14),
-    fg="black",
-    bg="light blue",
-)
-temp_label.place(relx=0.15, rely=0.4)
-
-
-# Create wind label
-wind_label = Label(window, text="Wind:")
-wind_label.config(
-    font=("Roboto", 14),
-    fg="black",
-    bg="light blue",
-)
-wind_label.place(relx=0.3, rely=0.5)
-
-input_label = Label(window)
-input_label.config(
-    bg="light blue",
-)
-input_label.place(relx=0.3, rely=0.65)
+# ---------------------------- FUNCTIONS ----------------------------
 
 
 # Get latitude and longitude values based on location name
@@ -150,20 +93,7 @@ def wind_scale(wind):
 
 # Function for input if pressed "Enter" key
 def on_enter(event):
-    try:
-        lat, long = get_location()
-        temp, wind = get_weather(lat, long)
-        temp_label.config(
-            text=f"Temperature: {temp}°C", image=temp_logo(temp), compound="right"
-        )
-        wind_label.config(text=f"Wind: {wind}kph ({wind_scale(wind)})")
-    except:
-        temp_label.config(text="Temperature:", image="")
-        wind_label.config(text="Wind:")
-
-
-# Bind search bar to function after "Enter" key press
-search_input.bind("<Return>", on_enter)
+    on_click()
 
 
 # Button function
@@ -178,6 +108,74 @@ def on_click():
     except:
         temp_label.config(text="Temperature:", image="")
         wind_label.config(text="Wind:")
+
+
+# ---------------------------- GUI ----------------------------
+
+# Instantiate an instance of a window
+window = Tk()
+window.geometry("420x420")
+window.title("Simple Weather App")
+
+
+# Instantiate an instance of the logos
+icon = PhotoImage(file="logo/weather.png")
+search_logo = PhotoImage(file="logo/magnifier.png")
+
+
+# Add logo to windows
+window.iconphoto(True, icon)
+window.config(background="light blue")
+
+
+# Label of the application
+main_label = Label(window, text="Simple Weather App")
+main_label.config(
+    font=("Roboto", 20, "bold"),
+    fg="black",
+    bg="light blue",
+    image=icon,
+    compound="right",
+)
+main_label.pack(padx=5, pady=20)
+
+
+# Create search box input
+search_input = Entry(window)
+search_input.config(font=("Roboto", 20))
+search_input.pack()
+
+
+# Create temperature label
+temp_label = Label(window, text="Temperature:")
+temp_label.config(
+    font=("Roboto", 14),
+    fg="black",
+    bg="light blue",
+)
+temp_label.place(relx=0.15, rely=0.4)
+
+
+# Create wind label
+wind_label = Label(window, text="Wind:")
+wind_label.config(
+    font=("Roboto", 14),
+    fg="black",
+    bg="light blue",
+)
+wind_label.place(relx=0.3, rely=0.5)
+
+
+# Create status label for input
+input_label = Label(window)
+input_label.config(
+    bg="light blue",
+)
+input_label.place(relx=0.3, rely=0.65)
+
+
+# Bind search bar to function after "Enter" key press
+search_input.bind("<Return>", on_enter)
 
 
 # Add a search button
