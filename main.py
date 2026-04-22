@@ -1,197 +1,183 @@
-from tkinter import *
-import requests
+import tkinter as tk
+
+from weather_service import WeatherAppError, get_location, get_weather
 
 
-# ---------------------------- FUNCTIONS ----------------------------
-
-
-# Get latitude and longitude values based on location name
-def get_location():
-    lat, long = 0, 0
-    location = search_input.get().strip().lower()
-
-    # Checks if no search input
-    if not location:
-        input_label.config(
-            text="Please enter a location to search",
-            font=("Roboto", 14),
-        )
-        input_label.place(relx=0.175, rely=0.65)
-        return
-    else:
-        input_label.config(
-            text="",
-            font=("Roboto", 14),
-        )
-
-    response = requests.get(
-        f"https://geocoding-api.open-meteo.com/v1/search?name={location}&count=1&language=en&format=json"
-    )
-    if response.status_code == 200:
-        data = response.json()
-        try:
-            lat = data["results"][0]["latitude"]
-            long = data["results"][0]["longitude"]
-        except:
-            input_label.config(
-                text="Location not found!",
-                font=("Roboto", 14),
-            )
-            input_label.place(relx=0.3, rely=0.65)
-            return
-    else:
-        print(f"An error occured: {response.status.code}")
-
-    return lat, long
-
-
-# Get weather data based on latitude and longitude
-def get_weather(lat, long):
-    temp = 0
-    wind = 0
-    response = requests.get(
-        f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={long}&current=temperature_2m,wind_speed_10m&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m"
-    )
-    if response.status_code == 200:
-        data = response.json()
-        try:
-            temp = data["current"]["temperature_2m"]
-            wind = data["current"]["wind_speed_10m"]
-        except:
-            return
-    else:
-        print(f"An error occured: {response.status.code}")
-
-    return temp, wind
-
-
-# Function to choose logo based on temperature
-def temp_logo(temp):
-    global temp_icon
+def temp_logo(temp: float) -> tk.PhotoImage:
     if temp >= 27:
-        temp_icon = PhotoImage(file="logo/hot.png")
-    elif temp >= 20:
-        temp_icon = PhotoImage(file="logo/cool.png")
-    else:
-        temp_icon = PhotoImage(file="logo/cold.png")
-
-    return temp_icon
+        return hot_icon
+    if temp >= 20:
+        return cool_icon
+    return cold_icon
 
 
-# Function to show wind scale in words
-def wind_scale(wind):
-    global wind_speed
+def wind_scale(wind: float) -> str:
     if wind >= 20:
-        wind_speed = "Strong gale"
-    elif wind >= 10:
-        wind_speed = "Fresh breeze"
-    else:
-        wind_speed = "Gentle breeze"
-
-    return wind_speed
+        return "Strong gale"
+    if wind >= 10:
+        return "Fresh breeze"
+    return "Gentle breeze"
 
 
-# Function for input if pressed "Enter" key
-def on_enter(event):
-    on_click()
+def reset_weather_labels() -> None:
+    location_value.config(text="-")
+    temp_value.config(text="Temperature: -", image="", compound="none")
+    wind_value.config(text="Wind: -")
+    humidity_value.config(text="Humidity: -")
+    condition_value.config(text="Condition: -")
+    forecast_value.config(text="Today's forecast: -")
 
 
-# Button function
-def on_click():
+def search_weather() -> None:
+    status_label.config(text="", fg="#0f172a")
+
     try:
-        lat, long = get_location()
-        temp, wind = get_weather(lat, long)
-        temp_label.config(
-            text=f"Temperature: {temp}°C", image=temp_logo(temp), compound="right"
-        )
-        wind_label.config(text=f"Wind: {wind}kph ({wind_scale(wind)})")
-    except:
-        temp_label.config(text="Temperature:", image="")
-        wind_label.config(text="Wind:")
+        location = get_location(search_input.get())
+        weather = get_weather(location.latitude, location.longitude)
+    except WeatherAppError as exc:
+        reset_weather_labels()
+        status_label.config(text=str(exc), fg="#b91c1c")
+        return
+
+    location_value.config(text=location.display_name)
+    temp_value.config(
+        text=f"Temperature: {weather.temperature_c:.1f} deg C",
+        image=temp_logo(weather.temperature_c),
+        compound="right",
+    )
+    wind_value.config(
+        text=f"Wind: {weather.wind_speed_kph:.1f} km/h ({wind_scale(weather.wind_speed_kph)})"
+    )
+    humidity_value.config(text=f"Humidity: {weather.humidity_percent}%")
+    condition_value.config(text=f"Condition: {weather.condition}")
+    forecast_value.config(
+        text=f"Today's forecast: H {weather.today_max_c:.1f} deg C / L {weather.today_min_c:.1f} deg C"
+    )
+    status_label.config(text="Weather updated successfully.", fg="#166534")
 
 
-# ---------------------------- GUI ----------------------------
+def on_enter(event: tk.Event) -> None:
+    search_weather()
 
-# Instantiate an instance of a window
-window = Tk()
-window.geometry("420x420")
+
+window = tk.Tk()
+window.geometry("520x480")
+window.resizable(False, False)
 window.title("Simple Weather App")
+window.config(background="#d9f1ff")
 
+app_icon = tk.PhotoImage(file="logo/weather.png")
+search_logo = tk.PhotoImage(file="logo/magnifier.png")
+hot_icon = tk.PhotoImage(file="logo/hot.png")
+cool_icon = tk.PhotoImage(file="logo/cool.png")
+cold_icon = tk.PhotoImage(file="logo/cold.png")
 
-# Instantiate an instance of the logos
-icon = PhotoImage(file="logo/weather.png")
-search_logo = PhotoImage(file="logo/magnifier.png")
+window.iconphoto(True, app_icon)
 
+header = tk.Frame(window, bg="#d9f1ff")
+header.pack(pady=(20, 12))
 
-# Add logo to windows
-window.iconphoto(True, icon)
-window.config(background="light blue")
-
-
-# Label of the application
-main_label = Label(window, text="Simple Weather App")
-main_label.config(
-    font=("Roboto", 20, "bold"),
-    fg="black",
-    bg="light blue",
-    image=icon,
+main_label = tk.Label(
+    header,
+    text="Simple Weather App",
+    font=("Roboto", 22, "bold"),
+    fg="#0f172a",
+    bg="#d9f1ff",
+    image=app_icon,
     compound="right",
+    padx=8,
 )
-main_label.pack(padx=5, pady=20)
+main_label.pack()
 
+search_frame = tk.Frame(window, bg="#d9f1ff")
+search_frame.pack(pady=(0, 16))
 
-# Create search box input
-search_input = Entry(window)
-search_input.config(font=("Roboto", 20))
-search_input.pack()
-
-
-# Create temperature label
-temp_label = Label(window, text="Temperature:")
-temp_label.config(
-    font=("Roboto", 14),
-    fg="black",
-    bg="light blue",
-)
-temp_label.place(relx=0.15, rely=0.4)
-
-
-# Create wind label
-wind_label = Label(window, text="Wind:")
-wind_label.config(
-    font=("Roboto", 14),
-    fg="black",
-    bg="light blue",
-)
-wind_label.place(relx=0.3, rely=0.5)
-
-
-# Create status label for input
-input_label = Label(window)
-input_label.config(
-    bg="light blue",
-)
-input_label.place(relx=0.3, rely=0.65)
-
-
-# Bind search bar to function after "Enter" key press
+search_input = tk.Entry(search_frame, font=("Roboto", 18), width=22, justify="center")
+search_input.grid(row=0, column=0, padx=(0, 10))
 search_input.bind("<Return>", on_enter)
 
-
-# Add a search button
-button = Button(window, text="Search")
-button.config(
-    command=on_click,
-    font=("Roboto", 16, "bold"),
-    bg="light blue",
-    fg="black",
+search_button = tk.Button(
+    search_frame,
+    text="Search",
+    command=search_weather,
+    font=("Roboto", 14, "bold"),
+    bg="#8bd3ff",
+    fg="#0f172a",
     activebackground="#62e9f3",
     image=search_logo,
     compound="right",
     padx=10,
 )
-button.pack(side=BOTTOM, pady=40)
+search_button.grid(row=0, column=1)
 
+results_card = tk.Frame(window, bg="#f8fdff", bd=1, relief="solid", padx=18, pady=18)
+results_card.pack(fill="both", expand=True, padx=24, pady=(0, 24))
 
-# Create window on computer screen
+location_value = tk.Label(
+    results_card,
+    text="-",
+    font=("Roboto", 16, "bold"),
+    fg="#0f172a",
+    bg="#f8fdff",
+    wraplength=420,
+    justify="center",
+)
+location_value.pack(pady=(0, 14))
+
+temp_value = tk.Label(
+    results_card,
+    text="Temperature: -",
+    font=("Roboto", 14),
+    fg="#0f172a",
+    bg="#f8fdff",
+)
+temp_value.pack(anchor="w", pady=4)
+
+wind_value = tk.Label(
+    results_card,
+    text="Wind: -",
+    font=("Roboto", 14),
+    fg="#0f172a",
+    bg="#f8fdff",
+)
+wind_value.pack(anchor="w", pady=4)
+
+humidity_value = tk.Label(
+    results_card,
+    text="Humidity: -",
+    font=("Roboto", 14),
+    fg="#0f172a",
+    bg="#f8fdff",
+)
+humidity_value.pack(anchor="w", pady=4)
+
+condition_value = tk.Label(
+    results_card,
+    text="Condition: -",
+    font=("Roboto", 14),
+    fg="#0f172a",
+    bg="#f8fdff",
+)
+condition_value.pack(anchor="w", pady=4)
+
+forecast_value = tk.Label(
+    results_card,
+    text="Today's forecast: -",
+    font=("Roboto", 14),
+    fg="#0f172a",
+    bg="#f8fdff",
+)
+forecast_value.pack(anchor="w", pady=4)
+
+status_label = tk.Label(
+    results_card,
+    text="Search for a city to load weather details.",
+    font=("Roboto", 12),
+    fg="#334155",
+    bg="#f8fdff",
+    wraplength=420,
+    justify="center",
+)
+status_label.pack(side="bottom", pady=(18, 0))
+
 window.mainloop()
