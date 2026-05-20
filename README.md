@@ -1,3 +1,6 @@
+> [!NOTE]
+> This project has moved to the main portfolio repository: [Portfolio Projects](https://github.com/nicholemunlawin/portfolio-projects/tree/main/python-projects/weather-app-python). This repository is archived and kept for history/reference.
+
 # Simple Weather App
 
 A desktop weather application built with Python and Tkinter. The app lets users search for a city or place name, converts that location into latitude and longitude with the Open-Meteo Geocoding API, and then fetches current conditions plus a same-day temperature forecast from the Open-Meteo Forecast API.
